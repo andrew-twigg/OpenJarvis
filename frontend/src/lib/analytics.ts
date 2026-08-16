@@ -18,7 +18,7 @@
  */
 
 import posthog from 'posthog-js';
-import { getBase } from './api';
+import { apiFetch } from './api';
 
 /**
  * Mirror of the Python event catalog (src/openjarvis/analytics/events.py
@@ -71,10 +71,7 @@ export async function initAnalytics(): Promise<void> {
   initialized = true; // claim the slot even on failure paths
 
   try {
-    const base = getBase();
-    if (!base) return;
-
-    const resp = await fetch(`${base}/v1/analytics/identity`);
+    const resp = await apiFetch(`/v1/analytics/identity`);
     if (!resp.ok) return;
 
     const identity: AnalyticsIdentity = await resp.json();
