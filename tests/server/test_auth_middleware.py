@@ -77,6 +77,24 @@ class TestAuthMiddleware:
         resp = client.get("/metrics", headers={"Authorization": "Bearer oj_sk_test123"})
         assert resp.status_code == 200
 
+    def test_cors_preflight_passes_without_auth(self, client):
+        """OPTIONS preflight must not require a Bearer token.
+
+        Browsers do not send the Authorization header on a CORS preflight, so
+        the auth middleware must let OPTIONS through. The CORSMiddleware (added
+        after AuthMiddleware, hence innermost in app.py) answers the preflight;
+        requiring auth here would 401 it and block the real cross-origin call
+        (bug: HTTPS Vite frontend -> HTTP API not working remotely).
+        """
+        resp = client.options(
+            "/v1/telemetry/stats",
+            headers={
+                "Origin": "https://192.168.200.10:5173",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.status_code == 200
+
     def test_no_key_configured_allows_all(self):
         client = TestClient(_make_app(""))
         resp = client.get("/v1/models")

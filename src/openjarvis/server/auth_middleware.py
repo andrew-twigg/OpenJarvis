@@ -40,6 +40,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):  # noqa: ANN001
         if self._api_key and self._requires_auth(request.url.path):
+            # CORS preflight: browsers never send the Authorization header on
+            # an OPTIONS request, and the CORSMiddleware (which runs after us
+            # since it's added later in app.py, i.e. innermost) answers these.
+            # Requiring auth here would 401 the preflight and block the browser
+            # from making the actual request. Let OPTIONS through.
+            if request.method == "OPTIONS":
+                return await call_next(request)
             auth = request.headers.get("Authorization", "")
             if not auth:
                 return JSONResponse(
