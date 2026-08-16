@@ -114,3 +114,15 @@ db_path = "~/.openjarvis/traces.db"
 host = "127.0.0.1"
 port = 8000
 agent = "native_openhands"
+
+# Browser origins allowed to call the API. Defaults only cover localhost, so a
+# frontend served over https on the LAN must be listed here or the browser's
+# CORS preflight for the Authorization header is rejected. Add the exact origin
+# (scheme + host + port) you open in the browser.
+# Note: if you launch with `jarvis serve --host 0.0.0.0`, that CLI flag wins
+# over this `host` value (a non-loopback bind also requires OPENJARVIS_API_KEY).
+cors_origins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://192.168.200.10:5173",
+]

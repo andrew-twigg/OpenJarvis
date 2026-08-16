@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import fs from 'node:fs'
 
 // VITE_SUPABASE_ANON_KEY is intentionally NOT required here: a missing key
 // disables the savings leaderboard at runtime (see src/lib/supabase.ts) rather
@@ -53,6 +54,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    https: {
+      key: fs.readFileSync('key.pem'),
+      cert: fs.readFileSync('cert.pem')
+    },
     proxy: {
       // ws: true is required for the /v1/agents/events WebSocket. Without it
       // Vite proxies the HTTP request but not the upgrade, so the socket never
