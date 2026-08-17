@@ -7,6 +7,7 @@ import pytest
 pytest.importorskip("fastapi", reason="openjarvis[server] not installed")
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
 from openjarvis.server.auth_middleware import AuthMiddleware
@@ -14,6 +15,12 @@ from openjarvis.server.auth_middleware import AuthMiddleware
 
 def _make_app(api_key: str) -> FastAPI:
     app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["https://example.com"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_middleware(AuthMiddleware, api_key=api_key)
 
     @app.get("/v1/models")
@@ -87,9 +94,9 @@ class TestAuthMiddleware:
         (bug: HTTPS Vite frontend -> HTTP API not working remotely).
         """
         resp = client.options(
-            "/v1/telemetry/stats",
+            "/v1/models",
             headers={
-                "Origin": "https://192.168.200.10:5173",
+                "Origin": "https://example.com",
                 "Access-Control-Request-Method": "GET",
             },
         )
