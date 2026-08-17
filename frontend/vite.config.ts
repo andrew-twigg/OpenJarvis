@@ -5,6 +5,15 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'node:fs'
 
+// Optional HTTPS for remote/LAN access. Only enabled when both cert paths are
+// provided (e.g. VITE_HTTPS_KEY=key.pem VITE_HTTPS_CERT=cert.pem), so local
+// dev keeps working out of the box without committing any cert files.
+const httpsKeyPath = process.env.VITE_HTTPS_KEY;
+const httpsCertPath = process.env.VITE_HTTPS_CERT;
+const https = httpsKeyPath && httpsCertPath
+  ? { key: fs.readFileSync(httpsKeyPath), cert: fs.readFileSync(httpsCertPath) }
+  : undefined;
+
 // VITE_SUPABASE_ANON_KEY is intentionally NOT required here: a missing key
 // disables the savings leaderboard at runtime (see src/lib/supabase.ts) rather
 // than failing the build, so the package/app stays publishable without it.
@@ -54,10 +63,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    https: {
-      key: fs.readFileSync('key.pem'),
-      cert: fs.readFileSync('cert.pem')
-    },
+    ...(https ? { https } : {}),
     proxy: {
       // ws: true is required for the /v1/agents/events WebSocket. Without it
       // Vite proxies the HTTP request but not the upgrade, so the socket never
