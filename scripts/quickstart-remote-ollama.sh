@@ -105,6 +105,31 @@ fi
 # This variant does NOT install/start/pull a local Ollama. Inference is
 # expected to run on a remote machine; see the header comment for config.
 
+# ── 4b. Check remote Ollama is reachable ─────────────────────────────
+# Read the endpoint from the live config (~/.openjarvis/config.toml) so we
+# don't assume a static IP. We only check status — we do NOT start anything.
+# Times out after 5s so the script fails fast if the remote is down.
+info "Checking remote Ollama..."
+CONFIG_PATH="$HOME/.openjarvis/config.toml"
+if [[ ! -f "$CONFIG_PATH" ]]; then
+  fail "No config at $CONFIG_PATH. Run the installer or create it (see header)."
+fi
+
+# Extract [engine.ollama] host from the TOML (robust to single/double quotes).
+OLLAMA_HOST="$(sed -n '/\[engine.ollama\]/,/^\[/p' "$CONFIG_PATH" \
+  | sed -n 's/^[[:space:]]*host[[:space:]]*=[[:space:]]*["'"'"']\([^"'"'"']*\)["'"'"'].*/\1/p' \
+  | head -n1)"
+
+if [[ -z "$OLLAMA_HOST" ]]; then
+  warn "No [engine.ollama] host found in $CONFIG_PATH — skipping reachability check."
+else
+  if curl -sf --connect-timeout 5 --max-time 5 "${OLLAMA_HOST%/}/api/tags" &>/dev/null; then
+    ok "Remote Ollama reachable at $OLLAMA_HOST"
+  else
+    fail "Remote Ollama at $OLLAMA_HOST is not reachable. Start it (e.g. 'ollama serve --host 0.0.0.0' on the remote) then re-run this script."
+  fi
+fi
+
 # ── 5. Install Python dependencies ──────────────────────────────────
 info "Installing Python dependencies..."
 uv sync --extra desktop --extra tools-search --quiet 2>/dev/null \
